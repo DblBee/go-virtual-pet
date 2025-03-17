@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Pet</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+        .response {
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            min-height: 50px;
+        }
+        button {
+            margin: 5px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="petName"></h1>
+    
+    <div class="status" id="petStatus">
+        Loading status...
+    </div>
+
+    <div>
+        <button onclick="updateStatus()">Status</button>
+        <button onclick="handleAction('feed', '')">Feed</button>
+        <button onclick="handleAction('sleep', '')">Sleep</button>
+        <input type="text" id="playInput" placeholder="Enter game to play">
+        <button onclick="handleAction('play', document.getElementById('playInput').value)">Play</button>
+    </div>
+
+    <div>
+        <input type="text" id="customInput" placeholder="Custom message">
+        <button onclick="handleAction('chat', document.getElementById('customInput').value)">Send Message</button>
+    </div>
+
+    <div class="response" id="petResponse">
+        Response will appear here...
+    </div>
+
+    <script>
+        async function updateStatus() {
+            try {
+                const response = await fetch('/api/pet-status');
+                const petInfo = await response.json();
+                document.getElementById('petName').innerText = petInfo.name;
+                document.getElementById('petStatus').innerHTML = `
+                    Energy: ${petInfo.status.energy}% | 
+                    Hunger: ${petInfo.status.hunger}% | 
+                    Happiness: ${petInfo.status.happiness}%
+                `;
+            } catch (error) {
+                console.error('Error fetching status:', error);
+            }
+        }
+
+        async function handleAction(action, text) {
+            try {
+                const response = await fetch('/api/pet-action', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ action, text })
+                });
+                const data = await response.json();
+                document.getElementById('petResponse').innerHTML = data.response.replace(/\n/g, '<br><br>');
+                updateStatus();
+            } catch (error) {
+                console.error('Error performing action:', error);
+            }
+        }
+
+        // Update status every 5 seconds
+        updateStatus();
+        // setInterval(updateStatus, 5000);
+    </script>
+</body>
+</html>
