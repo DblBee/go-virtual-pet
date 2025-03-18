@@ -88,7 +88,7 @@ func (p *Pet) HandleAction(ctx context.Context, action, text string) (string, er
 	case "feed":
 		p.Hunger = max(0, p.Hunger-20)
 		p.Energy = min(100, p.Energy+10)
-		prompt = "You were just got fed. Respond happily and mention how the food tastes."
+		prompt = "You were just fed. Respond happily and mention how the food tastes."
 	case "play":
 		p.Happiness = min(100, p.Happiness+20)
 		p.Energy = max(0, p.Energy-15)
