@@ -15,6 +15,8 @@ A virtual pet application powered by Google's Gemini AI that creates an interact
 
 ## Technical Stack
 
+[GO Documentation](DOC.md)
+
 - **Backend**: Go (Golang)
   - Fiber web framework for API endpoints
   - Google Generative AI SDK for Gemini

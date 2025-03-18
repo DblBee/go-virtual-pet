@@ -99,13 +99,18 @@ func GetResponseText(resp *genai.GenerateContentResponse) string {
 // Required Environment Variables:
 //   - GEMINI_API_KEY: API key for Gemini service authentication
 //   - GEMINI_MODEL_NAME: Name of the Gemini model to use
-func NewGeminiModel(ctx context.Context) (*genai.GenerativeModel, error) {
+func NewGeminiModel(ctx context.Context, systemInstruction string) (*genai.GenerativeModel, error) {
 	client, err := genai.NewClient(ctx, option.WithAPIKey(os.Getenv("GEMINI_API_KEY")))
 	if err != nil {
 		return nil, err
 	}
 
 	model := client.GenerativeModel(os.Getenv("GEMINI_MODEL_NAME"))
+	model.SetTemperature(0.7)
+	model.SetMaxOutputTokens(100)
+	model.SetTopP(1)
+	model.SetTopK(40)
+	model.SystemInstruction = genai.NewUserContent(genai.Text(systemInstruction))
 
 	model.SafetySettings = []*genai.SafetySetting{
 		{

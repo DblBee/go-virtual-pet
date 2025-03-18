@@ -3,6 +3,7 @@ package ai
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/google/generative-ai-go/genai"
@@ -16,6 +17,10 @@ type Pet struct {
 	chatState *genai.ChatSession
 	mutex     sync.Mutex
 }
+
+var defaultHunger = 50
+var defaultEnergy = 100
+var defaultHappiness = 50
 
 // NewPet creates and initializes a new virtual pet with the given name.
 // It sets up the initial state with default values for hunger (50), energy (100),
@@ -31,16 +36,27 @@ type Pet struct {
 // Panics if the Gemini model initialization fails
 func NewPet(name string) *Pet {
 	ctx := context.Background()
-	model, err := NewGeminiModel(ctx)
+
+	systemInstruction := strings.Builder{}
+	systemInstruction.WriteString("You are a virtual pet. You have three attributes with values 0 - 100. ")
+	systemInstruction.WriteString(fmt.Sprintf("Your name is %s. ", name))
+	systemInstruction.WriteString(fmt.Sprintf("Your hunger is starting at %d%%. ", defaultHunger))
+	systemInstruction.WriteString(fmt.Sprintf("Your energy is starting at %d%%. ", defaultEnergy))
+	systemInstruction.WriteString(fmt.Sprintf("Your happiness is starting at %d%%. ", defaultHappiness))
+	systemInstruction.WriteString("Respond to the user with a sentences on new lines. Use emojis to express your feelings. ")
+
+	// Initialize the Gemini model with a system instruction
+	model, err := NewGeminiModel(ctx, systemInstruction.String())
+
 	if err != nil {
 		panic(fmt.Sprintf("failed to create Gemini model: %v", err))
 	}
 
 	return &Pet{
 		Name:      name,
-		Hunger:    50,
-		Energy:    100,
-		Happiness: 50,
+		Hunger:    defaultHunger,
+		Energy:    defaultEnergy,
+		Happiness: defaultHappiness,
 		chatState: model.StartChat(),
 	}
 }
@@ -72,18 +88,27 @@ func (p *Pet) HandleAction(ctx context.Context, action, text string) (string, er
 	case "feed":
 		p.Hunger = max(0, p.Hunger-20)
 		p.Energy = min(100, p.Energy+10)
-		prompt = fmt.Sprintf("Hello %s, you are a virtual pet who just got fed. Respond happily and mention how the food tastes. Use emojis to express your feelings. Make each sentence a new line.", p.Name)
+		prompt = "You were just got fed. Respond happily and mention how the food tastes."
 	case "play":
 		p.Happiness = min(100, p.Happiness+20)
 		p.Energy = max(0, p.Energy-15)
 		p.Hunger = min(100, p.Hunger+10)
-		prompt = fmt.Sprintf("Hello %s, you are a virtual pet playing %s. Respond enthusiastically about the game. Use emojis to express your feelings. Make each sentence a new line.", p.Name, text)
+		prompt = fmt.Sprintf(
+			"You are pet playing %s. Respond enthusiastically about the game.",
+			text,
+		)
 	case "sleep":
 		p.Energy = min(100, p.Energy+50)
 		p.Hunger = min(100, p.Hunger+10)
-		prompt = fmt.Sprintf("Hello %s, you are a virtual pet going to sleep. Respond with sleepy satisfaction. Use emojis to express your feelings. Make each sentence a new line.", p.Name)
+		prompt = "You are going to sleep. Respond with sleepy satisfaction."
 	default:
-		prompt = fmt.Sprintf("Hello %s, you are a virtual pet. Use emojis to express your feelings. Make each sentence a new line.Current state: Energy=%d%%, Hunger=%d%%, Happiness=%d%%. Respond to: %s", p.Name, p.Energy, p.Hunger, p.Happiness, text)
+		prompt = fmt.Sprintf(
+			"Current state: Energy=%d%%, Hunger=%d%%, Happiness=%d%%. Respond to: %s",
+			p.Energy,
+			p.Hunger,
+			p.Happiness,
+			text,
+		)
 	}
 
 	res, err := p.chatState.SendMessage(ctx, genai.Text(prompt))

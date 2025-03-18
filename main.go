@@ -1,3 +1,18 @@
+// Package main implements a virtual pet simulation game where users can create,
+// interact with, and care for digital pets.
+//
+// The virtual pet system simulates various pet attributes including:
+//   - Health and hunger levels
+//   - Mood and happiness
+//   - Energy and activity status
+//
+// Users can perform various actions with their pets:
+//   - Feed and care for their pet
+//   - Play and interact with their pet
+//   - Monitor their pet's status and well-being
+//
+// The simulation runs in real-time, with the pet's status changing based on time
+// and user interactions.
 package main
 
 import (
